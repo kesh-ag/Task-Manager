@@ -20,7 +20,7 @@ def get_task(task_id:int,session:Session):
         raise HTTPException(status_code=404, detail="Task ID not found")
     return task
     
-def update_task(task_id: int, task_update: TaskUpdateRequest):
+def update_task(task_id: int, task_update: TaskUpdateRequest,session:Session):
     task=session.get(TaskRecord,task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task ID not found")
