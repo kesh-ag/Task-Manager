@@ -1,47 +1,45 @@
-from .schemas import TaskStatus, TaskUpdateRequest, TaskCreateRequest
-from datetime import datetime,UTC
+from .schemas import TaskStatus, TaskUpdateRequest, TaskCreateRequest,TaskRecord
 from fastapi import HTTPException
-
-tasks={}
-task_id=0
+from sqlmodel import Session,select
 
 
-def create_task(task_create: TaskCreateRequest):
-    global task_id
-    task_id+=1
-    task = {
-        "id": task_id,
-        "title": task_create.title,
-        "desc": task_create.desc,
-        "status": task_create.status,
-        "assigned_to": task_create.assigned_to,
-        "created_at": datetime.now(UTC)
-    }
-    tasks[task_id]=task
+
+def create_task(task_create: TaskCreateRequest,session:Session):
+    task =TaskRecord(title= task_create.title,
+        desc= task_create.desc,
+        status= task_create.status,
+        assigned_to=task_create.assigned_to)
+    session.add(task)
+    session.commit()
+    session.refresh(task)
     return task
 
-def get_task(task_id:int):
-    if task_id not in tasks:
+def get_task(task_id:int,session:Session):
+    task=session.get(TaskRecord,task_id)
+    if not task:
         raise HTTPException(status_code=404, detail="Task ID not found")
-    return tasks[task_id]
+    return task
     
 def update_task(task_id: int, task_update: TaskUpdateRequest):
-    if task_id not in tasks:
+    task=session.get(TaskRecord,task_id)
+    if not task:
         raise HTTPException(status_code=404, detail="Task ID not found")
-    task = tasks[task_id]
-    updates = task_update.model_dump(exclude_unset=True)
-    for key, value in updates.items():
-        task[key] = value
-    tasks[task_id] = task
+    updated_task = task_update.model_dump(exclude_unset=True)
+    task.sqlmodel_update(updated_task)
+    session.add(task)
+    session.commit()
+    session.refresh(task)
     return task
 
-def delete_task(task_id: int):
-    if task_id not in tasks:
-        raise HTTPException(status_code=404,detail="Task ID not found")
-    if tasks[task_id]["status"] == TaskStatus.completed:
+def delete_task(task_id: int,session:Session):
+    task=session.get(TaskRecord,task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task ID not found")
+    if task.status == TaskStatus.completed:
         raise HTTPException(400, "Cannot delete completed task")
-    del tasks[task_id]
+    session.delete(task)
+    session.commit()
     return "Task Deleted"
 
 def list_tasks():
-    return list(tasks.values())
+    return select.exec(select(TaskRecord)).all()
