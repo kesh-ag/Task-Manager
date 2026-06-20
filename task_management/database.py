@@ -1,6 +1,8 @@
 from sqlmodel import Session, create_engine
+from dotenv import load_dotenv
 
-Database_URL="postgresql+psycopg2://postgres:Kesh161206@localhost:5433/task_manager_db"
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(Database_URL) 
 
 def get_session():
