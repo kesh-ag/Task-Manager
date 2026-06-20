@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-from sqlmodel import Session,Depends
+from fastapi import APIRouter,Depends
+from sqlmodel import Session
 from .database import get_session
 from .service import get_task,update_task,create_task,list_tasks,delete_task
 from .schemas import TaskResponse, TaskUpdateRequest, TaskCreateRequest
@@ -12,8 +12,8 @@ def create_route(task:TaskCreateRequest,session:Session=Depends(get_session)):
     return create_task(task,session)
 
 @router.get("/")
-def list_route():
-    return list_tasks()
+def list_route(session:Session=Depends(get_session)):
+    return list_tasks(session)
 
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_route(task_id:int,session:Session=Depends(get_session)):

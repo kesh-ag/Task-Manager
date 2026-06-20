@@ -41,5 +41,5 @@ def delete_task(task_id: int,session:Session):
     session.commit()
     return "Task Deleted"
 
-def list_tasks():
-    return select.exec(select(TaskRecord)).all()
+def list_tasks(session:Session):
+    return session.exec(select(TaskRecord)).all()
